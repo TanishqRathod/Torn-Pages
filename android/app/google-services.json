@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "890003776894",
+    "project_id": "torn-pages-dc268",
+    "storage_bucket": "torn-pages-dc268.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:890003776894:android:6c24125282abc18351bf2f",
+        "android_client_info": {
+          "package_name": "com.example.torn_pages"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA69sRPsqsS2V8wvgs7bMgKsUANt-m8k8Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
