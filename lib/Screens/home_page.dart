@@ -1,6 +1,9 @@
+import 'dart:convert';
+
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart'; // Import shared_preferences
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:torn_pages/Screens/detail_page.dart'; // Import shared_preferences
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -23,6 +26,28 @@ class _HomePageState extends State<HomePage> {
   ];
 
   Set<int> heart = {};
+  late String imagePath;
+  late String title;
+
+
+  Future<void> _addFavorite(BuildContext context, int index) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    List<String> cartItems = prefs.getStringList('cart') ?? [];
+
+    Map<String, String> newItem = {
+      'imagePath': bookDetail[index]['image']!,
+      'name': bookDetail[index]['title']!,
+    };
+
+    cartItems.add(jsonEncode(newItem));
+
+    await prefs.setStringList('cart', cartItems);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(backgroundColor: Color(0xff243642),content: Text("${bookDetail[index]['title']} added to cart",style: TextStyle(color: Colors.white,fontWeight: FontWeight.w700,fontSize: 17),),),
+    );
+  }
+
 
   @override
   void initState() {
@@ -90,10 +115,12 @@ class _HomePageState extends State<HomePage> {
                   top: 170,
                   left: 0,
                   right: 0,
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: List.generate(bookDetail.length, (index) {
+                  child: SizedBox(
+                    height: 245, // Ensure it has a fixed height
+                    child: ListView.builder(
+                      scrollDirection: Axis.horizontal,
+                      itemCount: bookDetail.length,
+                      itemBuilder: (context, index) {
                         return Container(
                           margin: EdgeInsets.only(top: 0, left: 20),
                           height: 245,
@@ -135,6 +162,7 @@ class _HomePageState extends State<HomePage> {
                                             heart.remove(index);
                                           } else {
                                             heart.add(index);
+                                            _addFavorite(context, index);
                                           }
                                         });
                                         _saveFavorites(); // Save when the heart state changes
@@ -171,7 +199,9 @@ class _HomePageState extends State<HomePage> {
                                       Row(
                                         children: [
                                           InkWell(
-                                            onTap: () {},
+                                            onTap: () {
+                                              Navigator.push(context, MaterialPageRoute(builder: (context) => DetailPage(index: index),));
+                                            },
                                             child: Container(
                                               width: 101,
                                               padding: EdgeInsets.symmetric(vertical: 10),
@@ -207,10 +237,11 @@ class _HomePageState extends State<HomePage> {
                             ],
                           ),
                         );
-                      }),
+                      },
                     ),
                   ),
                 ),
+
                 Positioned(
                   top: 430,
                   left: 20,

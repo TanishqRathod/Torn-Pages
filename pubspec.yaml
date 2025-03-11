@@ -39,6 +39,11 @@ dependencies:
   firebase_auth:
   carousel_slider:
   shared_preferences:
+  http:
+  vocsy_epub_viewer:
+  flutter_pdfview:
+  path_provider:
+  google_sign_in:
 
 dev_dependencies:
   flutter_test:

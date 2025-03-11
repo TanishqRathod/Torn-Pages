@@ -1,8 +1,6 @@
 import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:cupertino_icons/cupertino_icons.dart';
-import 'package:torn_pages/Screens/home_page.dart';
 import 'package:torn_pages/Screens/login_screen.dart';
 import 'package:torn_pages/Screens/register_screen.dart';
 import 'package:torn_pages/Screens/splash_screen.dart';

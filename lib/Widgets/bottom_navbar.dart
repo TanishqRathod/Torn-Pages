@@ -2,6 +2,7 @@ import 'package:curved_navigation_bar/curved_navigation_bar.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:torn_pages/Screens/boarding_screen.dart';
+import 'package:torn_pages/Screens/favorite_page.dart';
 import 'package:torn_pages/Screens/home_page.dart';
 import 'package:torn_pages/Screens/login_screen.dart';
 import 'package:torn_pages/Screens/register_screen.dart';
@@ -17,7 +18,7 @@ class BottomNavbarScreen extends StatefulWidget {
 class _BottomNavbarState extends State<BottomNavbarScreen> {
   late List<Widget> pages;
   late HomePage home;
-  late RegisterScreen register;
+  late FavoritePage favoritePage;
   late YHomePage yuvraj;
   late BoardingScreen boarding;
 
@@ -25,10 +26,10 @@ class _BottomNavbarState extends State<BottomNavbarScreen> {
   void initState() {
     super.initState();
     home = HomePage();
-    register = RegisterScreen();
+    favoritePage = FavoritePage();
     yuvraj = YHomePage();
     boarding = BoardingScreen();
-    pages = [home, register, yuvraj, boarding];
+    pages = [home, favoritePage, yuvraj, boarding];
   }
 
   int currentIndex = 0;
