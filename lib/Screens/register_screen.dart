@@ -1,7 +1,12 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:get/get_core/src/get_main.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:torn_pages/Screens/login_screen.dart';
+import 'package:torn_pages/Widgets/bottom_navbar.dart';
+import 'package:torn_pages/routes/app_routes.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -20,45 +25,73 @@ class _LoginScreenState extends State<RegisterScreen> {
   TextEditingController passwordController = TextEditingController();
 
   final _formkey = GlobalKey<FormState>();
+  //
+  // Future<void> registerUser() async {
+  //   try {
+  //     UserCredential userCredential = await FirebaseAuth.instance
+  //         .createUserWithEmailAndPassword(
+  //         email: emailController.text, password: passwordController.text);
+  //
+  //     User? user = userCredential.user;
+  //
+  //     if (user != null) {
+  //       await user.updateDisplayName(nameController.text);
+  //       await user.reload();
+  //       user = FirebaseAuth.instance.currentUser;
+  //     }
+  //
+  //     Navigator.pushReplacement(
+  //       context,
+  //       MaterialPageRoute(builder: (context) => BottomNavbarScreen()),
+  //     );
+  //   } on FirebaseAuthException catch (e) {
+  //     print("Error: ${e.message}");
+  //   }
+  // }
+
 
   registaion() async {
     if (password != "" && name != "" && email != "") {
       try {
         UserCredential userCredential = await FirebaseAuth.instance
             .createUserWithEmailAndPassword(email: email!, password: password!);
+
+        SharedPreferences prefs = await SharedPreferences.getInstance();
+        await prefs.setString('name', name!);
+        await prefs.setString('email', email!);
+
+        User? user = userCredential.user;
+        if (user != null) {
+                await user.updateDisplayName(nameController.text);
+                await user.reload();
+                user = FirebaseAuth.instance.currentUser;
+              }
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(
             backgroundColor: Color(0xff243642),
             content: Text(
               'Register Successfully',
-              style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 18),
+              style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 18),
             )));
+
         Navigator.push(context, MaterialPageRoute(builder: (context) => LoginScreen(),));
       } on FirebaseAuthException catch (e) {
         if (e.code == 'weak-password') {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
               backgroundColor: Color(0xff243642),
-              content: Text('Given Pasword Is Too WEAK',
-                  style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w900,
-                      fontSize: 18))));
+              content: Text('Given Password Is Too WEAK',
+                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 18))));
         } else if (e.code == 'email-already-in-use') {
           ScaffoldMessenger.of(context).showSnackBar(SnackBar(
               backgroundColor: Color(0xff243642),
               content: Text(
-                'Given Email Is AREADY IN USE',
-                style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 18),
+                'Given Email Is ALREADY IN USE',
+                style: TextStyle(color: Colors.white, fontWeight: FontWeight.w900, fontSize: 18),
               )));
         }
       }
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -110,7 +143,7 @@ class _LoginScreenState extends State<RegisterScreen> {
           Positioned(
             bottom: 0,
             child: Container(
-              height: 640,
+              height: 550,
               width: MediaQuery.of(context).size.width,
               decoration: BoxDecoration(
                   color: Color(0xff243642),
@@ -329,8 +362,8 @@ class _LoginScreenState extends State<RegisterScreen> {
                             style: TextStyle(
                                 color: Color(0xff243642), fontSize: 12)),
                         InkWell(
-                            onTap: () {
-                              Navigator.push(context, MaterialPageRoute(builder: (context) => LoginScreen(),));
+                            onTap: (){
+                              Navigator.pop(context);
                             },
                             child: Text('Sign in',
                                 style: TextStyle(

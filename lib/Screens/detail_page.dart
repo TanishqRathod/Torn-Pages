@@ -1,13 +1,14 @@
+import 'dart:convert';
 import 'dart:io';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
-import 'package:vocsy_epub_viewer/epub_viewer.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'epub_reader_page.dart';
 
 class DetailPage extends StatefulWidget {
-  final int index; // <-- Add index parameter
+  final int index;
 
   const DetailPage({super.key, required this.index});
 
@@ -16,46 +17,108 @@ class DetailPage extends StatefulWidget {
 }
 
 class _DetailPageState extends State<DetailPage> {
+  Set<int> heart = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _loadFavorites();
+  }
+
+  Future<void> _loadFavorites() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    List<String> cartItems = prefs.getStringList('cart') ?? [];
+
+    setState(() {
+      heart.clear();
+      for (int i = 0; i < bookDetail.length; i++) {
+        String bookJson = jsonEncode({
+          'imagePath': bookDetail[i]['img']!,
+          'name': bookDetail[i]['name']!,
+        });
+        if (cartItems.contains(bookJson)) {
+          heart.add(i);
+        }
+      }
+    });
+  }
+
+  Future<void> _toggleFavorite(BuildContext context, int index) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    List<String> cartItems = prefs.getStringList('cart') ?? [];
+
+    String bookJson = jsonEncode({
+      'imagePath': bookDetail[index]['img']!,
+      'name': bookDetail[index]['name']!,
+    });
+
+    bool isFavorite = cartItems.contains(bookJson);
+
+    setState(() {
+      if (isFavorite) {
+        cartItems.remove(bookJson);
+        heart.remove(index);
+      } else {
+        cartItems.add(bookJson);
+        heart.add(index);
+      }
+    });
+
+    await prefs.setStringList('cart', cartItems);
+    await _syncFavorites();
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: Color(0xff243642),
+        content: Text(
+          isFavorite ? "Removed from favorites" : "Added to favorites",
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w700,
+            fontSize: 17,
+          ),
+        ),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
+  Future<void> _syncFavorites() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    List<String> cartItems = prefs.getStringList('cart') ?? [];
+    await prefs.setStringList('savedItems', cartItems);
+  }
+
   final List<Map<String, String>> bookDetail = [
     {
-      'img': 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSVwtEPj6T8J3a5sGsxxq9QVRuJyVniH01-xQ&s',
-      'name': 'White Tiger',
-      'auth': 'Aravind Adiga',
-      'download': '40 mb',
+      'img': 'assets/images/book-1.png',
+      'name': 'Crushing & Influence',
+      'auth': 'Dale Carnegie',
       'url': 'https://pustakam.pythonanywhere.com/book/The_White_Tiger__PDFDrive__k23Yke1.epub',
     },
     {
-      'img': 'https://www.crossword.in/cdn/shop/files/A1PmZbuU8KL._SL1500.jpg?v=1726486389',
-      'name': 'Famous Painting',
-      'auth': 'Rosie Dickins',
-      'download': '50 mb',
+      'img': 'assets/images/book-2.png',
+      'name': 'How to Win Friends',
+      'auth': 'Dale Carnegie',
       'url': 'assets/books/famouspaintings.epub',
     },
     {
-      'img': 'https://images.pexels.com/photos/674010/pexels-photo-674010.jpeg?cs=srgb&dl=pexels-anjana-c-169994-674010.jpg&fm=jpg',
-      'name': 'myBook3',
-      'auth': 'MyName',
-      'download': '35 mb',
+      'img': 'assets/images/book-3.png',
+      'name': 'Atomic Habits',
+      'auth': 'James Clear',
       'url': 'https://pustakam.pythonanywhere.com/book/The_White_Tiger__PDFDrive__k23Yke1.epub',
     },
   ];
 
-  String? _epubPath;
-
   Future<void> _downloadAndOpenEpub(String url) async {
+    String epubPath;
     try {
-      if (url.startsWith('http')) {
+      if (url.startsWith('https')) {
         final response = await http.get(Uri.parse(url));
         if (response.statusCode == 200) {
           final directory = await getTemporaryDirectory();
-          final epubPath = "${directory.path}/downloaded_book.epub";
-
-          final file = File(epubPath);
-          await file.writeAsBytes(response.bodyBytes, flush: true);
-
-          setState(() {
-            _epubPath = epubPath;
-          });
+          epubPath = "${directory.path}/downloaded_book.epub";
+          await File(epubPath).writeAsBytes(response.bodyBytes, flush: true);
         } else {
           print("Failed to download EPUB file.");
           return;
@@ -63,27 +126,16 @@ class _DetailPageState extends State<DetailPage> {
       } else {
         final data = await DefaultAssetBundle.of(context).load(url);
         final directory = await getTemporaryDirectory();
-        final epubPath = "${directory.path}/local_book.epub";
-
-        final file = File(epubPath);
-        await file.writeAsBytes(data.buffer.asUint8List(), flush: true);
-
-        setState(() {
-          _epubPath = epubPath;
-        });
+        epubPath = "${directory.path}/local_book.epub";
+        await File(epubPath).writeAsBytes(data.buffer.asUint8List(), flush: true);
       }
 
-      if (_epubPath != null) {
-        VocsyEpub.setConfig(
-          themeColor: Theme.of(context).primaryColor,
-          identifier: "epubBook",
-          scrollDirection: EpubScrollDirection.VERTICAL,
-          allowSharing: true,
-          enableTts: true,
-          nightMode: true,
-        );
-        VocsyEpub.open(_epubPath!);
-      }
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => EpubReaderScreen(epubPath: epubPath),
+        ),
+      );
     } catch (e) {
       print("Error: $e");
     }
@@ -91,7 +143,7 @@ class _DetailPageState extends State<DetailPage> {
 
   @override
   Widget build(BuildContext context) {
-    final book = bookDetail[widget.index]; // Use widget.index to get book data
+    final book = bookDetail[widget.index];
 
     return Scaffold(
       body: Stack(
@@ -99,27 +151,36 @@ class _DetailPageState extends State<DetailPage> {
           Container(
             height: MediaQuery.of(context).size.height,
             width: MediaQuery.of(context).size.width,
-            color: Color(0xff243642),
+            color: const Color(0xff243642),
           ),
-          Positioned(top: 30,left: 10,child: InkWell(onTap: (){Navigator.pop(context);},child: Icon(CupertinoIcons.left_chevron,color: Colors.white,size: 35,))),
+          Positioned(
+            top: 35,
+            left: 10,
+            child: InkWell(
+              onTap: () => Navigator.pop(context),
+              child: const Icon(CupertinoIcons.left_chevron,
+                  color: Colors.white, size: 35),
+            ),
+          ),
           Positioned(
             bottom: 0,
             child: Container(
               height: 550,
               width: MediaQuery.of(context).size.width,
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: Color(0xff243642),
                 borderRadius: BorderRadius.vertical(top: Radius.circular(70)),
               ),
               child: Stack(
                 children: [
                   Container(
-                    height: MediaQuery.of(context).size.height,
-                    width: MediaQuery.of(context).size.width,
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.vertical(top: Radius.circular(70)),
-                      child: Image.asset(
-                        'assets/images/bg_image.jpeg',
+                    height: double.infinity,
+                    width: double.infinity,
+                    decoration: const BoxDecoration(
+                      borderRadius:
+                      BorderRadius.vertical(top: Radius.circular(90)),
+                      image: DecorationImage(
+                        image: AssetImage('assets/images/bg_image.jpeg'),
                         fit: BoxFit.cover,
                       ),
                     ),
@@ -129,82 +190,123 @@ class _DetailPageState extends State<DetailPage> {
             ),
           ),
           Positioned(
-            top: 130,
+            top: 150,
             left: 90,
             child: Container(
               height: 220,
               width: 220,
-              child: Image.asset('assets/images/book-1.png', fit: BoxFit.fill),
+              decoration: BoxDecoration(
+                image: DecorationImage(image: AssetImage(book['img']!)),
+              ),
             ),
           ),
           Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(book['name']!, style: TextStyle(color: Colors.white, fontSize: 25, fontWeight: FontWeight.bold)),
-                Text("by ${book['auth']!}", style: TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w400)),
+                Text(book['name']!,
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 25,
+                        fontWeight: FontWeight.bold)),
+                Text("by ${book['auth']!}",
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w400)),
               ],
             ),
           ),
           Positioned(
-            top: 490,
-            left: 30,
-            right: 30,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  children: [
-                    Icon(CupertinoIcons.book, color: Colors.white, size: 35),
-                    Text('Reading', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w400, fontSize: 18))
-                  ],
-                ),
-                Column(
-                  children: [
-                    Icon(CupertinoIcons.bookmark, color: Colors.white, size: 35),
-                    Text('Bookshelf', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w400, fontSize: 18))
-                  ],
-                ),
-                Column(
-                  children: [
-                    Icon(CupertinoIcons.heart, color: Colors.white, size: 35),
-                    Text('Like', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w400, fontSize: 18)),
-                  ],
-                )
-              ],
-            ),
-          ),
-          Positioned(
-            bottom: 90,
+            top: 30,
+            left: 15,
             right: 10,
-            left: 20,
-            child: Column(
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 30),
-                  child: Row(
-                    children: [
-                      Text('Details', style: TextStyle(color: Color(0xff243642), fontSize: 25, fontWeight: FontWeight.w700)),
-                    ],
+                Column(
+                  children: [
+                    IconButton(
+                      onPressed: () => _toggleFavorite(context, widget.index),
+                      icon: heart.contains(widget.index)
+                          ? const Icon(CupertinoIcons.heart_fill,
+                          color: Color(0xffB01E15))
+                          : const Icon(CupertinoIcons.heart,size: 35,
+                          color: Colors.white),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          Positioned(
+            bottom: 20,
+            left: 20,
+            right: 10,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Padding(
+                  padding: EdgeInsets.only(bottom: 10),
+                  child: Text(
+                    'Details',
+                    style: TextStyle(
+                      color: Color(0xff243642),
+                      fontSize: 25,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
+                // Wrap the scrolling content properly
                 Container(
-                  height: 150,
-                  width: double.infinity,
-                  child: Text(
-                    "Harry Potter is a series of seven fantasy novels written by British author J. K. Rowling. The novels chronicle the lives of a young wizard, Harry Potter, and his friends...",
-                    style: TextStyle(color: Color(0xff243642), fontSize: 12, fontWeight: FontWeight.w300),
+                  height: 250,
+                  child: SingleChildScrollView(
+                    child: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Text(
+                        "Harry Potter is a series of seven fantasy novels written by British author J. K. Rowling. "
+                            "The novels chronicle the lives of a young wizard, Harry Potter, and his friends... (rest of your text)"
+                            "Harry Potter is a series of seven fantasy novels written by British author J. K. Rowling. "
+                            "The novels chronicle the lives of a young wizard, Harry Potter, and his friends... (rest of your text)"
+                            "Harry Potter is a series of seven fantasy novels written by British author J. K. Rowling. "
+                            "The novels chronicle the lives of a young wizard, Harry Potter, and his friends... (rest of your text)"
+                            "Harry Potter is a series of seven fantasy novels written by British author J. K. Rowling. "
+                            "The novels chronicle the lives of a young wizard, Harry Potter, and his friends... (rest of your text)"
+                            "Harry Potter is a series of seven fantasy novels written by British author J. K. Rowling. "
+                            "The novels chronicle the lives of a young wizard, Harry Potter, and his friends... (rest of your text)"
+                            "Harry Potter is a series of seven fantasy novels written by British author J. K. Rowling. "
+                            "The novels chronicle the lives of a young wizard, Harry Potter, and his friends... (rest of your text)"
+                            "Harry Potter is a series of seven fantasy novels written by British author J. K. Rowling. "
+                            "The novels chronicle the lives of a young wizard, Harry Potter, and his friends... (rest of your text)"
+                            "Harry Potter is a series of seven fantasy novels written by British author J. K. Rowling. "
+                            "The novels chronicle the lives of a young wizard, Harry Potter, and his friends... (rest of your text)"
+                            "Harry Potter is a series of seven fantasy novels written by British author J. K. Rowling. "
+                            "The novels chronicle the lives of a young wizard, Harry Potter, and his friends... (rest of your text)"
+                            "Harry Potter is a series of seven fantasy novels written by British author J. K. Rowling. "
+                            "The novels chronicle the lives of a young wizard, Harry Potter, and his friends... (rest of your text)",
+                        style: TextStyle(
+                          color: Color(0xff243642),
+                          fontSize: 12,
+                          fontWeight: FontWeight.w300,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ],
             ),
           ),
+
         ],
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       floatingActionButton: GestureDetector(
         onTap: () async {
           final url = book['url']!;
+          final name = book['name']!;
+          SharedPreferences prefs = await SharedPreferences.getInstance();
+          await prefs.setString('book_name', name);
+
           if (url.isNotEmpty) {
             await _downloadAndOpenEpub(url);
           } else {
@@ -212,11 +314,18 @@ class _DetailPageState extends State<DetailPage> {
           }
         },
         child: Container(
-          margin: EdgeInsets.symmetric(horizontal: 30, vertical: 10),
+          margin: const EdgeInsets.symmetric(horizontal: 30, vertical: 10),
           height: 60,
           width: MediaQuery.of(context).size.width,
-          decoration: BoxDecoration(color: Color(0xff243642), borderRadius: BorderRadius.circular(15)),
-          child: Center(child: Text('Read Book', style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 20))),
+          decoration: BoxDecoration(
+              color: const Color(0xff243642),
+              borderRadius: BorderRadius.circular(15)),
+          child: const Center(
+              child: Text('Read Book',
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 20))),
         ),
       ),
     );

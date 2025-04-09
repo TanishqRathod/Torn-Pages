@@ -48,4 +48,6 @@ flutter {
 dependencies {
     implementation platform('com.google.firebase:firebase-bom:33.8.0')
     implementation 'com.google.firebase:firebase-analytics'
+    implementation 'net.sf.jopt-simple:jopt-simple:5.0.4'
+    implementation 'org.joda:joda-convert:2.2.2'
 }

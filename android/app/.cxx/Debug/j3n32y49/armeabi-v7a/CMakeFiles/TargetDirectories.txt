@@ -1,0 +1,2 @@
+/Users/tanishq/Documents/Flutter Project/torn_pages/android/app/.cxx/Debug/j3n32y49/armeabi-v7a/CMakeFiles/edit_cache.dir
+/Users/tanishq/Documents/Flutter Project/torn_pages/android/app/.cxx/Debug/j3n32y49/armeabi-v7a/CMakeFiles/rebuild_cache.dir

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -20,12 +21,14 @@ class _FavoritePageState extends State<FavoritePage> {
   Future<void> _loadFavorite() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     List<String> items = prefs.getStringList('cart') ?? [];
+
     setState(() {
       favoriteItems = items.map((item) => Map<String, String>.from(jsonDecode(item))).toList();
     });
   }
 
-  // Remove Item from Favorite
+
+// remove
   Future<void> _removeFromFavorite(int index) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     List<String> items = prefs.getStringList('cart') ?? [];
@@ -33,9 +36,33 @@ class _FavoritePageState extends State<FavoritePage> {
     if (index < items.length) {
       items.removeAt(index);
       await prefs.setStringList('cart', items);
-      _loadFavorite(); // Refresh after deletion
+      _loadFavorite(); // Refresh list
     }
+
+    // Show snackbar message
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: Color(0xff243642),
+        content: Text(
+          "Removed from favorites",
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w700,
+            fontSize: 17,
+          ),
+        ),
+        duration: Duration(seconds: 2),
+      ),
+    );
   }
+
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _loadFavorite(); // Reload favorites when user returns to screen
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -57,7 +84,10 @@ class _FavoritePageState extends State<FavoritePage> {
             child: Text(
               "F",
               style: TextStyle(
-                color: Color(0xff243642),
+                color: Theme.of(context).brightness ==
+                    Brightness.light
+                    ? Color(0xff243642)
+                    : Colors.white,
                 fontWeight: FontWeight.w700,
                 fontSize: 80,
                 fontFamily: 'CicleFina',
@@ -70,7 +100,10 @@ class _FavoritePageState extends State<FavoritePage> {
             child: Text(
               'avorites',
               style: TextStyle(
-                color: Color(0xff243642),
+                color: Theme.of(context).brightness ==
+                    Brightness.light
+                    ? Color(0xff243642)
+                    : Colors.white,
                 fontWeight: FontWeight.w700,
                 fontSize: 40,
                 fontFamily: 'AlegreyaSans',
@@ -80,7 +113,7 @@ class _FavoritePageState extends State<FavoritePage> {
 
           // Favorites List
           Positioned(
-            top: 150, // Adjusted position to avoid overlapping with title
+            top: 150,
             left: 0,
             right: 0,
             bottom: 0,
@@ -88,7 +121,7 @@ class _FavoritePageState extends State<FavoritePage> {
                 ? Center(
               child: Text(
                 "No items in favorites",
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold,color: Color(0xff243642)),
               ),
             )
                 : Padding(
@@ -98,6 +131,10 @@ class _FavoritePageState extends State<FavoritePage> {
                 itemBuilder: (context, index) {
                   final item = favoriteItems[index];
                   return Card(
+                    color: Theme.of(context).brightness ==
+                        Brightness.light
+                        ? Colors.white
+                        : Color(0xff243642),
                     elevation: 4,
                     margin: EdgeInsets.symmetric(vertical: 8),
                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
@@ -105,10 +142,10 @@ class _FavoritePageState extends State<FavoritePage> {
                       leading: Image.asset(item['imagePath']!, width: 50, height: 50),
                       title: Text(
                         item['name']!,
-                        style: TextStyle(fontWeight: FontWeight.bold),
+                        style: TextStyle(fontWeight: FontWeight.bold,),
                       ),
                       trailing: IconButton(
-                        icon: Icon(Icons.delete, color: Color(0xff243642)),
+                        icon: Icon(CupertinoIcons.heart_fill,color: Color(0xffB01E15),),
                         onPressed: () => _removeFromFavorite(index),
                       ),
                     ),

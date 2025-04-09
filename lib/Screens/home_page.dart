@@ -1,12 +1,20 @@
 import 'dart:convert';
-
+import 'dart:io';
+import 'package:carousel_slider/carousel_slider.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:torn_pages/Screens/detail_page.dart'; // Import shared_preferences
+import 'package:torn_pages/Screens/detail_page.dart';
+import 'package:http/http.dart' as http;
+import '../common widgets/book.dart';
+import '../common widgets/top_pick_cell.dart';
+import 'epub_reader_page.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  final int index;
+  const HomePage({super.key, required this.index});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -14,41 +22,68 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   List<Map<String, String>> bookDetail = [
-    {'title': 'Crushing & Influence', 'author': 'Tanishq Rathod', 'image': 'assets/images/book-1.png'},
-    {'title': 'How to Win Friends', 'author': 'Dale Carnegie', 'image': 'assets/images/book-2.png'},
-    {'title': 'Atomic Habits', 'author': 'James Clear', 'image': 'assets/images/book-3.png'},
+    {
+      'title': 'Crushing & Influence',
+      'author': 'Tanishq Rathod',
+      'image': 'assets/images/book-1.png',
+      'description': 'Flamingo is an eBook (reading book) app design',
+      'url': 'https://pustakam.pythonanywhere.com/book/The_White_Tiger__PDFDrive__k23Yke1.epub',
+    },
+    {
+      'title': 'How to Win Friends',
+      'author': 'Dale Carnegie',
+      'image': 'assets/images/book-2.png',
+      'description': 'This is a description of another book',
+      'url': 'assets/books/famouspaintings.epub',
+    },
+    {
+      'title': 'Atomic Habits',
+      'author': 'James Clear',
+      'image': 'assets/images/book-3.png',
+      'description': 'A brief overview of this book',
+      'url': 'https://pustakam.pythonanywhere.com/book/The_White_Tiger__PDFDrive__k23Yke1.epub',
+    },
   ];
 
-  List<Map<String, String>> moreBooks = [
-    {'author': 'Tanishq Rathod', 'description': 'Flamingo is an eBook (reading book) app design', 'image': 'assets/images/book-1.png'},
-    {'author': 'John Doe', 'description': 'This is a description of another book', 'image': 'assets/images/book-2.png'},
-    {'author': 'Jane Smith', 'description': 'A brief overview of this book', 'image': 'assets/images/book-3.png'},
+  // List<Map<String, String>> moreBooks = [
+  //   {
+  //     'author': 'Aravind Adiga',
+  //     'description': 'Flamingo is an eBook (reading book) app design',
+  //     'image': 'assets/images/book-1.png'
+  //   },
+  //   {
+  //     'author': 'John Doe',
+  //
+  //     'image': 'assets/images/book-2.png'
+  //   },
+  //   {
+  //     'author': 'Jane Smith',
+  //
+  //     'image': 'assets/images/book-3.png'
+  //   },
+  // ];
+
+  List topPicksArr = [
+    {
+      "name": "The Dissapearance of Emila Zola",
+      "author": "Michael Rosen",
+      "img": "assets/images/book-1.png"
+    },
+    {
+      "name": "Fatherhood",
+      "author": "Marcus Berkmann",
+      "img": "assets/images/book-2.png"
+    },
+    {
+      "name": "The Time Travellers Handbook",
+      "author": "Stride Lottie",
+      "img": "assets/images/book-3.png"
+    }
   ];
 
   Set<int> heart = {};
   late String imagePath;
   late String title;
-
-
-  Future<void> _addFavorite(BuildContext context, int index) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    List<String> cartItems = prefs.getStringList('cart') ?? [];
-
-    Map<String, String> newItem = {
-      'imagePath': bookDetail[index]['image']!,
-      'name': bookDetail[index]['title']!,
-    };
-
-    cartItems.add(jsonEncode(newItem));
-
-    await prefs.setStringList('cart', cartItems);
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(backgroundColor: Color(0xff243642),content: Text("${bookDetail[index]['title']} added to cart",style: TextStyle(color: Colors.white,fontWeight: FontWeight.w700,fontSize: 17),),),
-    );
-  }
-
-
   @override
   void initState() {
     super.initState();
@@ -57,21 +92,104 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _loadFavorites() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    List<String>? savedFavorites = prefs.getStringList('favoriteBooks');
-    if (savedFavorites != null) {
-      setState(() {
-        heart = savedFavorites.map((e) => int.tryParse(e) ?? 0).toSet();
-      });
-    }
+    List<String> cartItems = prefs.getStringList('cart') ?? [];
+
+    setState(() {
+      heart.clear();
+      for (int i = 0; i < bookDetail.length; i++) {
+        String bookJson = jsonEncode({
+          'imagePath': bookDetail[i]['image']!,
+          'name': bookDetail[i]['title']!,
+        });
+        if (cartItems.contains(bookJson)) {
+          heart.add(i);
+        }
+      }
+    });
   }
 
-  Future<void> _saveFavorites() async {
+  Future<void> _toggleFavorite(BuildContext context, int index) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    prefs.setStringList('favoriteBooks', heart.map((e) => e.toString()).toList());
+    List<String> cartItems = prefs.getStringList('cart') ?? [];
+
+    String bookJson = jsonEncode({
+      'imagePath': bookDetail[index]['image']!,
+      'name': bookDetail[index]['title']!,
+    });
+
+    bool isFavorite = cartItems.contains(bookJson);
+
+    setState(() {
+      if (isFavorite) {
+        cartItems.remove(bookJson);
+        heart.remove(index);
+      } else {
+        cartItems.add(bookJson);
+        heart.add(index);
+      }
+    });
+
+    await prefs.setStringList('cart', cartItems);
+    await _syncFavorites();
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        backgroundColor: Color(0xff243642),
+        content: Text(
+          isFavorite ? "Removed from favorites" : "Added to favorites",
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.w700,
+            fontSize: 17,
+          ),
+        ),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
+  Future<void> _syncFavorites() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    List<String> cartItems = prefs.getStringList('cart') ?? [];
+    await prefs.setStringList(
+        'savedItems', cartItems); // Sync with Favorite Page
+  }
+
+  Future<void> _downloadAndOpenEpub(String url) async {
+    String epubPath;
+    try {
+      if (url.startsWith('http')) {
+        final response = await http.get(Uri.parse(url));
+        if (response.statusCode == 200) {
+          final directory = await getTemporaryDirectory();
+          epubPath = "${directory.path}/downloaded_book.epub";
+          await File(epubPath).writeAsBytes(response.bodyBytes, flush: true);
+        } else {
+          print("Failed to download EPUB file.");
+          return;
+        }
+      } else {
+        final data = await DefaultAssetBundle.of(context).load(url);
+        final directory = await getTemporaryDirectory();
+        epubPath = "${directory.path}/local_book.epub";
+        await File(epubPath)
+            .writeAsBytes(data.buffer.asUint8List(), flush: true);
+      }
+
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => EpubReaderScreen(epubPath: epubPath),
+        ),
+      );
+    } catch (e) {
+      print("Error: $e");
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final book = bookDetail.first!;
     return Scaffold(
       body: Stack(
         children: [
@@ -96,14 +214,22 @@ class _HomePageState extends State<HomePage> {
                         children: [
                           TextSpan(
                             text: 'What are you reading',
-                            style: TextStyle(fontSize: 35, color: Colors.white),
+                            style: TextStyle(
+                                fontSize: 35,
+                                color: Theme.of(context).brightness ==
+                                        Brightness.light
+                                    ? Colors.white
+                                    : Color(0xff243642)),
                           ),
                           TextSpan(
                             text: ' today!!',
                             style: TextStyle(
                               fontSize: 35,
                               fontWeight: FontWeight.bold,
-                              color: Color(0xff243642),
+                              color: Theme.of(context).brightness ==
+                                      Brightness.light
+                                  ? const Color(0xff243642)
+                                  : Colors.white,
                             ),
                           ),
                         ],
@@ -116,17 +242,19 @@ class _HomePageState extends State<HomePage> {
                   left: 0,
                   right: 0,
                   child: SizedBox(
-                    height: 245, // Ensure it has a fixed height
+                    height: 245,
                     child: ListView.builder(
                       scrollDirection: Axis.horizontal,
                       itemCount: bookDetail.length,
                       itemBuilder: (context, index) {
+                        final book = bookDetail[index];
                         return Container(
-                          margin: EdgeInsets.only(top: 0, left: 20),
+                          margin: const EdgeInsets.only(top: 0, left: 20),
                           height: 245,
                           width: 202,
                           child: Stack(
                             children: [
+                              // Background container
                               Positioned(
                                 bottom: 0,
                                 left: 0,
@@ -134,46 +262,50 @@ class _HomePageState extends State<HomePage> {
                                 child: Container(
                                   height: 221,
                                   decoration: BoxDecoration(
-                                    color: Colors.white,
+                                    color: Theme.of(context).scaffoldBackgroundColor,
                                     borderRadius: BorderRadius.circular(29),
                                     boxShadow: [
                                       BoxShadow(
                                         offset: Offset(0, 10),
                                         blurRadius: 33,
-                                        color: Color(0xffd3d3d3).withOpacity(.84),
+                                        color: Get.isDarkMode
+                                            ? Colors.black.withOpacity(0.3)
+                                            : Colors.grey.withOpacity(0.4),
                                       ),
                                     ],
                                   ),
                                 ),
                               ),
+
+                              // Book image
                               Image.asset(
-                                bookDetail[index]['image']!,
+                                book['image']!,
                                 width: 150,
                               ),
+
+                              // Favorite icon
                               Positioned(
                                 right: 10,
                                 top: 35,
                                 child: Column(
                                   children: [
                                     IconButton(
-                                      onPressed: () {
-                                        setState(() {
-                                          if (heart.contains(index)) {
-                                            heart.remove(index);
-                                          } else {
-                                            heart.add(index);
-                                            _addFavorite(context, index);
-                                          }
-                                        });
-                                        _saveFavorites(); // Save when the heart state changes
-                                      },
+                                      onPressed: () => _toggleFavorite(context, index),
                                       icon: heart.contains(index)
-                                          ? Icon(CupertinoIcons.heart_fill, color: Color(0xffB01E15))
-                                          : Icon(CupertinoIcons.heart),
+                                          ? Icon(
+                                        CupertinoIcons.heart_fill,
+                                        color: Color(0xffB01E15),
+                                      )
+                                          : Icon(
+                                        CupertinoIcons.heart,
+                                        color: Theme.of(context).primaryColor,
+                                      ),
                                     ),
                                   ],
                                 ),
                               ),
+
+                              // Book Info and Buttons
                               Positioned(
                                 top: 173,
                                 child: Container(
@@ -182,50 +314,101 @@ class _HomePageState extends State<HomePage> {
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
+                                      // Title
                                       Padding(
                                         padding: const EdgeInsets.symmetric(horizontal: 25),
                                         child: Text(
-                                          bookDetail[index]['title']!,
-                                          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold, fontSize: 14),
+                                          book['title']!,
+                                          style: TextStyle(
+                                            color: Theme.of(context).textTheme.bodyLarge?.color,
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: 14,
+                                          ),
                                         ),
                                       ),
+                                      // Author
                                       Padding(
                                         padding: const EdgeInsets.symmetric(horizontal: 25),
                                         child: Text(
-                                          bookDetail[index]['author']!,
-                                          style: TextStyle(color: Colors.black87, fontSize: 10),
+                                          book['author']!,
+                                          style: TextStyle(
+                                            color: Theme.of(context)
+                                                .textTheme
+                                                .bodyMedium
+                                                ?.color
+                                                ?.withOpacity(0.8),
+                                            fontSize: 10,
+                                          ),
                                         ),
                                       ),
+                                      // Buttons
                                       Row(
                                         children: [
-                                          InkWell(
+                                          GestureDetector(
                                             onTap: () {
-                                              Navigator.push(context, MaterialPageRoute(builder: (context) => DetailPage(index: index),));
+                                              Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (context) => DetailPage(index: index),
+                                                ),
+                                              );
                                             },
                                             child: Container(
                                               width: 101,
-                                              padding: EdgeInsets.symmetric(vertical: 10),
+                                              padding: const EdgeInsets.symmetric(vertical: 10),
                                               alignment: Alignment.center,
                                               child: Text(
                                                 'Details',
-                                                style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+                                                style: TextStyle(
+                                                  color:
+                                                  Theme.of(context).textTheme.bodyLarge?.color,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
                                               ),
                                             ),
                                           ),
-                                          Container(
-                                            width: 101,
-                                            alignment: Alignment.center,
-                                            padding: EdgeInsets.symmetric(vertical: 10),
-                                            decoration: BoxDecoration(
-                                              color: Color(0xff243642),
-                                              borderRadius: BorderRadius.only(
-                                                topLeft: Radius.circular(29),
-                                                bottomRight: Radius.circular(29),
+                                          InkWell(
+                                            onTap: () async {
+                                              print('Read button clicked');
+
+                                              final name = book['title']!;
+                                              final url = book['url'] ?? '';
+
+                                              // Save book name
+                                              SharedPreferences prefs =
+                                              await SharedPreferences.getInstance();
+                                              await prefs.setString('book_name', name);
+
+                                              if (url.isNotEmpty) {
+                                                await _downloadAndOpenEpub(url);
+                                              } else {
+                                                print("No URL found for this book.");
+                                              }
+                                            },
+                                            child: Container(
+                                              width: 101,
+                                              alignment: Alignment.center,
+                                              padding: const EdgeInsets.symmetric(vertical: 10),
+                                              decoration: BoxDecoration(
+                                                color:
+                                                Theme.of(context).brightness == Brightness.light
+                                                    ? const Color(0xff243642)
+                                                    : Colors.white,
+                                                borderRadius: const BorderRadius.only(
+                                                  topLeft: Radius.circular(29),
+                                                  bottomRight: Radius.circular(29),
+                                                ),
                                               ),
-                                            ),
-                                            child: Text(
-                                              'Read',
-                                              style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                                              child: Text(
+                                                'Read',
+                                                style: TextStyle(
+                                                  color: Theme.of(context).brightness ==
+                                                      Brightness.light
+                                                      ? Colors.white
+                                                      : const Color(0xff243642),
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
                                             ),
                                           ),
                                         ],
@@ -238,10 +421,10 @@ class _HomePageState extends State<HomePage> {
                           ),
                         );
                       },
-                    ),
+                    )
+
                   ),
                 ),
-
                 Positioned(
                   top: 430,
                   left: 20,
@@ -250,14 +433,22 @@ class _HomePageState extends State<HomePage> {
                       children: [
                         TextSpan(
                           text: 'Best of ',
-                          style: TextStyle(fontSize: 35, color: Colors.white),
+                          style: TextStyle(
+                              fontSize: 35,
+                              color: Theme.of(context).brightness ==
+                                      Brightness.light
+                                  ? Colors.white
+                                  : Color(0xff243642)),
                         ),
                         TextSpan(
                           text: 'the day',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 35,
-                            color: Color(0xff243642),
+                            color:
+                                Theme.of(context).brightness == Brightness.light
+                                    ? Color(0xff243642)
+                                    : Colors.white,
                           ),
                         ),
                       ],
@@ -276,34 +467,44 @@ class _HomePageState extends State<HomePage> {
                         width: MediaQuery.of(context).size.width,
                         decoration: BoxDecoration(
                           borderRadius: BorderRadius.circular(30),
-                          color: Colors.white,
+                          color: Theme.of(context).brightness == Brightness.light
+                              ? Colors.white
+                              : Color(0xff243642),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
                               'New York Time Best For 11th March 202?',
-                              style: TextStyle(fontSize: 10),
+                              style: TextStyle(fontSize: 10,color: Theme.of(context).brightness == Brightness.light
+                                  ? Color(0xff243642)
+                                  : Colors.white),
                             ),
                             SizedBox(height: 5),
                             Text(
                               'How to Win\nFriends & Influence',
                               style: TextStyle(
-                                  fontSize: 19, fontWeight: FontWeight.w400),
+                                  fontSize: 19, fontWeight: FontWeight.w400,color:  Theme.of(context).brightness == Brightness.light
+                                  ? Color(0xff243642)
+                                  : Colors.white),
                             ),
                             SizedBox(height: 5),
                             Text(
                               'Tanishq Rathod',
                               style: TextStyle(
-                                  color: Colors.black54, fontSize: 13),
+                                  color:  Theme.of(context).brightness == Brightness.light
+                                      ? Colors.black54
+                                      : Colors.white, fontSize: 13,),
                             ),
                             SizedBox(height: 10),
                             Container(
                               width: 220,
                               child: Text(
                                 "Flamingo is an eBook (reading book) app design "
-                                    "by #flutter, at home page it shows you some recommended.",
-                                style: TextStyle(fontSize: 10),
+                                "by #flutter, at home page it shows you some recommended.",
+                                style: TextStyle(fontSize: 10,color:  Theme.of(context).brightness == Brightness.light
+                                    ? Colors.black
+                                    : Colors.white),
                               ),
                             ),
                           ],
@@ -323,20 +524,40 @@ class _HomePageState extends State<HomePage> {
                 Positioned(
                   top: 650,
                   right: 10,
-                  child: Container(
-                    width: 150,
-                    alignment: Alignment.center,
-                    padding: EdgeInsets.symmetric(vertical: 10),
-                    decoration: BoxDecoration(
-                        color: Color(0xff243642),
-                        borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(29),
-                            bottomRight: Radius.circular(29))),
-                    child: Text(
-                      'Read',
-                      style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold),
+                  child: InkWell(
+                    onTap: () async {
+                      final url =
+                          'https://pustakam.pythonanywhere.com/book/The_White_Tiger__PDFDrive__k23Yke1.epub';
+                      final name = book['title']!;
+
+                      SharedPreferences prefs =
+                          await SharedPreferences.getInstance();
+                      await prefs.setString('book_name', name);
+
+                      if (url.isNotEmpty) {
+                        await _downloadAndOpenEpub(url);
+                      } else {
+                        print("No URL found for this book.");
+                      }
+                    },
+                    child: Container(
+                      width: 150,
+                      alignment: Alignment.center,
+                      padding: EdgeInsets.symmetric(vertical: 10),
+                      decoration: BoxDecoration(
+                          color: Theme.of(context).brightness == Brightness.light
+                              ? Color(0xff243642)
+                              : Colors.white,
+                          borderRadius: BorderRadius.only(
+                              topLeft: Radius.circular(29),
+                              bottomRight: Radius.circular(29))),
+                      child: Text(
+                        'Read',
+                        style: TextStyle(
+                            color:  Theme.of(context).brightness == Brightness.light
+                                ? Colors.white
+                                : Color(0xff243642), fontWeight: FontWeight.bold),
+                      ),
                     ),
                   ),
                 ),
@@ -347,15 +568,19 @@ class _HomePageState extends State<HomePage> {
                     text: TextSpan(
                       children: [
                         TextSpan(
-                          text: 'More Book ',
-                          style: TextStyle(fontSize: 35, color: Colors.white),
+                          text: 'Our Top ',
+                          style: TextStyle(fontSize: 35, color:  Theme.of(context).brightness == Brightness.light
+                              ? Colors.white
+                              : Color(0xff243642)),
                         ),
                         TextSpan(
-                          text: 'to Read ',
+                          text: 'Picks',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 35,
-                            color: Color(0xff243642),
+                            color:  Theme.of(context).brightness == Brightness.light
+                                ? Color(0xff243642)
+                                : Colors.white,
                           ),
                         ),
                       ],
@@ -363,49 +588,142 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
                 Positioned(
-                  top: 760,
+                    top: 670,
+                    child: SizedBox(
+                      height: 400,
+                      width: MediaQuery.of(context).size.width,
+                      child: Stack(
+                        children: [
+                          // Carousel
+                          Positioned(
+                            bottom: 0,
+                            right: 0,
+                            left: 0,
+                            child: CarouselSlider.builder(
+                              itemCount: topPicksArr.length,
+                              itemBuilder: (BuildContext context, int itemIndex,
+                                  int pageViewIndex) {
+                                var iObj = topPicksArr[itemIndex] as Map? ?? {};
+                                return InkWell(
+                                    onTap: () {
+                                      Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                              builder: (context) => DetailPage(
+                                                  index: itemIndex)));
+                                    },
+                                    child: TopPicksCell(iObj: iObj));
+                              },
+                              options: CarouselOptions(
+                                autoPlay: true,
+                                aspectRatio: 1,
+                                enlargeCenterPage: true,
+                                viewportFraction: 0.45,
+                                enlargeFactor: 0.4,
+                                enlargeStrategy: CenterPageEnlargeStrategy.zoom,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )),
+                Positioned(
+                  top: 990,
+                  left: 20,
+                  child: RichText(
+                    text: TextSpan(
+                      children: [
+                        TextSpan(
+                          text: 'More Book ',
+                          style: TextStyle(fontSize: 35, color: Theme.of(context).brightness == Brightness.light
+                              ? Colors.white
+                              : Color(0xff243642)),
+                        ),
+                        TextSpan(
+                          text: 'to Read ',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 35,
+                            color: Theme.of(context).brightness == Brightness.light
+                                ? Color(0xff243642)
+                                : Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Positioned(
+                  top: 1030,
                   left: 0,
                   right: 0,
                   child: ListView.builder(
-                    itemCount: moreBooks.length,
+                    itemCount: bookDetail.length,
                     shrinkWrap: true,
                     physics: NeverScrollableScrollPhysics(),
                     itemBuilder: (context, index) {
-                      return Container(
-                        margin: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                        width: MediaQuery.of(context).size.width,
-                        height: 60,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(10),
-                          color: Colors.white,
-                        ),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Container(
-                              margin: EdgeInsets.only(left: 20, top: 10),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    moreBooks[index]['author']!,
-                                    style: TextStyle(color: Colors.black54, fontSize: 13),
-                                  ),
-                                  Container(
-                                    width: 250,
-                                    child: Text(
-                                      moreBooks[index]['description']!,
-                                      style: TextStyle(fontSize: 10),
+                      return InkWell(
+                        onTap: () async {
+                          print('Read button clicked');
+
+                          final name = book['title']!;
+                          final url = book['url'] ?? '';
+
+                          // Save book name
+                          SharedPreferences prefs =
+                          await SharedPreferences.getInstance();
+                          await prefs.setString('book_name', name);
+
+                          if (url.isNotEmpty) {
+                            await _downloadAndOpenEpub(url);
+                          } else {
+                            print("No URL found for this book.");
+                          }
+                        },
+                        child: Container(
+                          margin:
+                              EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          width: MediaQuery.of(context).size.width,
+                          height: 60,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(10),
+                            color: Theme.of(context).brightness == Brightness.light
+                                ? Colors.white
+                                : Color(0xff243642),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Container(
+                                margin: EdgeInsets.only(left: 20, top: 10),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      bookDetail[index]['author']!,
+                                      style: TextStyle(
+                                          color: Theme.of(context).brightness == Brightness.light
+                                              ? Color(0xff243642)
+                                              : Colors.white, fontSize: 13),
                                     ),
-                                  ),
-                                ],
+                                    Container(
+                                      width: 250,
+                                      child: Text(
+                                        bookDetail[index]['description']!,
+                                        style: TextStyle(fontSize: 10,color: Theme.of(context).brightness == Brightness.light
+                                            ? Colors.black54
+                                            : Colors.white),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                            Image.asset(
-                              moreBooks[index]['image']!,
-                              height: 50,
-                            ),
-                          ],
+                              Image.asset(
+                                bookDetail[index]['image']!,
+                                height: 50,
+                              ),
+                            ],
+                          ),
                         ),
                       );
                     },

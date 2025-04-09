@@ -1,9 +1,12 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:torn_pages/Screens/home_page.dart';
 import 'package:torn_pages/Screens/register_screen.dart';
 import 'package:torn_pages/Widgets/bottom_navbar.dart';
+
+import '../data/database/google_auth.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -13,7 +16,6 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-
   bool password = true;
 
   String? email, passwords;
@@ -25,15 +27,15 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       await FirebaseAuth.instance
           .signInWithEmailAndPassword(email: email!, password: passwords!);
-      // ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-      //     backgroundColor: Color(0xff243642),
-      //     content: Text(
-      //       'Login Successfully',
-      //       style: TextStyle(
-      //           color: Colors.white,
-      //           fontWeight: FontWeight.w900,
-      //           fontSize: 18),
-      //     )));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          backgroundColor: Color(0xff243642),
+          content: Text(
+            'Login Successfully',
+            style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w900,
+                fontSize: 18),
+          )));
       Navigator.push(
           context,
           MaterialPageRoute(
@@ -66,7 +68,11 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return WillPopScope(
+        onWillPop: () async {
+      SystemNavigator.pop();
+      return false;
+    },child:Scaffold(
       body: Stack(
         children: [
           Container(
@@ -78,21 +84,25 @@ class _LoginScreenState extends State<LoginScreen> {
             top: 25,
             left: 10,
             child: Column(children: [
-              RichText(text: TextSpan(
-                children: [TextSpan(text: 'L',
+              RichText(
+                  text: TextSpan(children: [
+                TextSpan(
+                  text: 'L',
                   style: TextStyle(
                       color: Colors.white,
                       fontSize: 150,
                       fontFamily: 'CicleFina',
-                      fontWeight: FontWeight.w100),),
-                  TextSpan(text: 'ogin',
-                    style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 90,
-                        fontFamily: 'CicleFina',
-                        fontWeight: FontWeight.w100),),
-                ]
-              ))
+                      fontWeight: FontWeight.w100),
+                ),
+                TextSpan(
+                  text: 'ogin',
+                  style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 90,
+                      fontFamily: 'CicleFina',
+                      fontWeight: FontWeight.w100),
+                ),
+              ]))
             ]),
           ),
           Positioned(
@@ -114,7 +124,7 @@ class _LoginScreenState extends State<LoginScreen> {
           Positioned(
             bottom: 0,
             child: Container(
-              height: 640,
+              height: 550,
               width: MediaQuery.of(context).size.width,
               decoration: BoxDecoration(
                   color: Color(0xff243642),
@@ -165,7 +175,10 @@ class _LoginScreenState extends State<LoginScreen> {
                                 decoration: InputDecoration(
                                   suffixIcon: Padding(
                                     padding: const EdgeInsets.only(top: 10.0),
-                                    child: Icon(CupertinoIcons.mail,color: Color(0xff243642),),
+                                    child: Icon(
+                                      CupertinoIcons.mail,
+                                      color: Color(0xff243642),
+                                    ),
                                   ),
                                   hintText: 'Email',
                                   hintStyle: TextStyle(
@@ -214,16 +227,26 @@ class _LoginScreenState extends State<LoginScreen> {
                                 cursorColor: Color(0xff243642),
                                 decoration: InputDecoration(
                                   suffixIcon: Padding(
-                                    padding: const EdgeInsets.only(top: 10.0),
-                                    child: IconButton(onPressed: (){
-                                      setState(() {
-                                        password = !password;
-                                      });
-                                    }, icon: password ? Icon(CupertinoIcons.lock,color: Color(0xff243642),) : Icon(CupertinoIcons.lock_open,color: Color(0xff243642),),)
-                                  ),
+                                      padding: const EdgeInsets.only(top: 10.0),
+                                      child: IconButton(
+                                        onPressed: () {
+                                          setState(() {
+                                            password = !password;
+                                          });
+                                        },
+                                        icon: password
+                                            ? Icon(
+                                                CupertinoIcons.lock,
+                                                color: Color(0xff243642),
+                                              )
+                                            : Icon(
+                                                CupertinoIcons.lock_open,
+                                                color: Color(0xff243642),
+                                              ),
+                                      )),
                                   hintText: 'Password',
                                   hintStyle: TextStyle(
-                                      fontSize: 20,  color: Color(0xff243642)),
+                                      fontSize: 20, color: Color(0xff243642)),
                                   border: OutlineInputBorder(
                                     borderSide:
                                         BorderSide(color: Colors.transparent),
@@ -252,7 +275,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
                           InkWell(
-                          onTap: (){},
+                            onTap: () {},
                             child: Text(
                               'Forgot Password?',
                               style: TextStyle(
@@ -274,16 +297,26 @@ class _LoginScreenState extends State<LoginScreen> {
                         decoration: BoxDecoration(),
                         child: ElevatedButton(
                             onPressed: () {
-                              if (emailController.text != "" &&
-                                  passwordController.text != "") {
+                              if (emailController.text.isNotEmpty &&
+                                  passwordController.text.isNotEmpty) {
                                 setState(() {
                                   email = emailController.text;
                                   passwords = passwordController.text;
                                 });
-                                // var prefration = await SharedPreferences.getInstance();
-                                // prefration.setString('EMAIl', email!);
+                                userlogin();
+                              } else {
+                                ScaffoldMessenger.of(context)
+                                    .showSnackBar(SnackBar(
+                                  backgroundColor: Color(0xff243642),
+                                  content: Text(
+                                    'Please enter email and password',
+                                    style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w900,
+                                        fontSize: 18),
+                                  ),
+                                ));
                               }
-                              userlogin();
                             },
                             style: ElevatedButton.styleFrom(
                                 shape: RoundedRectangleBorder(
@@ -317,11 +350,30 @@ class _LoginScreenState extends State<LoginScreen> {
                                 style: TextStyle(
                                     color: Color(0xff243642),
                                     fontWeight: FontWeight.w700,
-                                    fontSize: 12)
-                            )
-                        ),
+                                    fontSize: 12))),
                       ],
                     ),
+                    SizedBox(height: 10,),
+                    InkWell(
+                      onTap: ()async{
+                        User? user = await AuthService().signInWithGoogle();
+                        if (user != null) {
+                          Navigator.pushReplacement(
+                            context,
+                            MaterialPageRoute(builder: (context) => BottomNavbarScreen()),
+                          );
+                        }
+                      },
+                      child: Container(
+                        height: 50,
+                        width: 50,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                        ),
+                        child: Center(child: Text('G',style: TextStyle(color: Color(0xff243642),fontWeight: FontWeight.w900,fontSize: 35),)),
+                      ),
+                    )
                   ],
                 ),
                 Positioned(
@@ -336,6 +388,7 @@ class _LoginScreenState extends State<LoginScreen> {
           )
         ],
       ),
+    )
     );
   }
 }

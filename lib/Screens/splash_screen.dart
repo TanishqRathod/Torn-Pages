@@ -1,7 +1,13 @@
 import 'dart:async';
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:torn_pages/Screens/boarding_screen.dart';
 import 'package:torn_pages/Screens/login_screen.dart';
+import 'package:torn_pages/Widgets/bottom_navbar.dart';
+
+import '../routes/app_routes.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -14,8 +20,13 @@ class _SplashScreenState extends State<SplashScreen> {
 
   @override
   void initState() {
-    Timer(Duration(seconds: 3),(){
-      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => LoginScreen(),));
+    Timer(const Duration(seconds: 2), () {
+      if (FirebaseAuth.instance.currentUser == null) {
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => BoardingScreen(),));
+      } else {
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => BottomNavbarScreen(),));
+      }
+
     });
     super.initState();
   }
@@ -62,6 +73,22 @@ class _SplashScreenState extends State<SplashScreen> {
           ])),
         ),
       ]),
+    );
+  }
+}
+
+class AuthCheck extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(),
+      builder: (context, snapshot) {
+        if (snapshot.hasData) {
+          return BottomNavbarScreen();  // Redirect to home if logged in
+        } else {
+          return LoginScreen();  // Show login screen if not logged in
+        }
+      },
     );
   }
 }

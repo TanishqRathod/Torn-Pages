@@ -1,0 +1,1 @@
+/Users/tanishq/Documents/Flutter Project/torn_pages/build/app/intermediates/cxx/RelWithDebInfo/1z3x576h/obj/armeabi-v7a
