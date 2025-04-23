@@ -23,61 +23,42 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   List<Map<String, String>> bookDetail = [
     {
-      'title': 'Crushing & Influence',
-      'author': 'Tanishq Rathod',
-      'image': 'assets/images/book-1.png',
+      'title': 'The White Tiger',
+      'author': 'Aravind Adiga',
+      'image': 'assets/images/the_white_tiger.jpg',
       'description': 'Flamingo is an eBook (reading book) app design',
       'url': 'https://pustakam.pythonanywhere.com/book/The_White_Tiger__PDFDrive__k23Yke1.epub',
     },
     {
-      'title': 'How to Win Friends',
-      'author': 'Dale Carnegie',
-      'image': 'assets/images/book-2.png',
+      'title': 'Call You Liberly',
+      'author': 'Chantol C. Aspinall',
+      'image': 'assets/images/call_you_liberly.jpg',
       'description': 'This is a description of another book',
-      'url': 'assets/books/famouspaintings.epub',
+      'url': 'assets/book/call-her-liberty-sweet-historical-romance-the-kingdom-series-book-1-obooko.epub',
     },
     {
-      'title': 'Atomic Habits',
-      'author': 'James Clear',
-      'image': 'assets/images/book-3.png',
+      'title': 'Foursteps To Forgiveness',
+      'author': 'William Fergus Martin',
+      'image': 'assets/images/foursteps_to_forgiveness.jpg',
       'description': 'A brief overview of this book',
-      'url': 'https://pustakam.pythonanywhere.com/book/The_White_Tiger__PDFDrive__k23Yke1.epub',
+      'url': 'assets/book/Four-Steps-to-Forgiveness-William-Fergus-Martin.epub',
     },
   ];
-
-  // List<Map<String, String>> moreBooks = [
-  //   {
-  //     'author': 'Aravind Adiga',
-  //     'description': 'Flamingo is an eBook (reading book) app design',
-  //     'image': 'assets/images/book-1.png'
-  //   },
-  //   {
-  //     'author': 'John Doe',
-  //
-  //     'image': 'assets/images/book-2.png'
-  //   },
-  //   {
-  //     'author': 'Jane Smith',
-  //
-  //     'image': 'assets/images/book-3.png'
-  //   },
-  // ];
-
   List topPicksArr = [
     {
       "name": "The Dissapearance of Emila Zola",
       "author": "Michael Rosen",
-      "img": "assets/images/book-1.png"
+      "img": "assets/images/the_white_tiger.jpg"
     },
     {
       "name": "Fatherhood",
       "author": "Marcus Berkmann",
-      "img": "assets/images/book-2.png"
+      "img": "assets/images/call_you_liberly.jpg"
     },
     {
       "name": "The Time Travellers Handbook",
       "author": "Stride Lottie",
-      "img": "assets/images/book-3.png"
+      "img": "assets/images/foursteps_to_forgiveness.jpg"
     }
   ];
 
@@ -238,7 +219,7 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
                 Positioned(
-                  top: 170,
+                  top: 160,
                   left: 0,
                   right: 0,
                   child: SizedBox(
@@ -278,15 +259,18 @@ class _HomePageState extends State<HomePage> {
                               ),
 
                               // Book image
-                              Image.asset(
-                                book['image']!,
-                                width: 150,
+                              Positioned(
+                                left: 30,
+                                child: Image.asset(
+                                  book['image']!,
+                                  width: 110,
+                                ),
                               ),
 
                               // Favorite icon
                               Positioned(
                                 right: 10,
-                                top: 35,
+                                top: 45,
                                 child: Column(
                                   children: [
                                     IconButton(
@@ -322,7 +306,7 @@ class _HomePageState extends State<HomePage> {
                                           style: TextStyle(
                                             color: Theme.of(context).textTheme.bodyLarge?.color,
                                             fontWeight: FontWeight.bold,
-                                            fontSize: 14,
+                                            fontSize: 12,
                                           ),
                                         ),
                                       ),
@@ -515,9 +499,9 @@ class _HomePageState extends State<HomePage> {
                 ),
                 Positioned(
                   top: 470,
-                  right: 10,
+                  right: 30,
                   child: Image.asset(
-                    "assets/images/book-1.png",
+                    "assets/images/call_you_liberly.jpg",
                     height: 170,
                   ),
                 ),
@@ -527,7 +511,7 @@ class _HomePageState extends State<HomePage> {
                   child: InkWell(
                     onTap: () async {
                       final url =
-                          'https://pustakam.pythonanywhere.com/book/The_White_Tiger__PDFDrive__k23Yke1.epub';
+                          'assets/book/call-her-liberty-sweet-historical-romance-the-kingdom-series-book-1-obooko.epub';
                       final name = book['title']!;
 
                       SharedPreferences prefs =

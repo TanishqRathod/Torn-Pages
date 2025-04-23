@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:epubx/epubx.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
 import 'package:file_picker/file_picker.dart';
@@ -28,6 +29,9 @@ class _EpubReaderScreenState extends State<EpubReaderScreen> {
   bool useBackgroundImage = false;
   File? backgroundImageFile;
   Color textColor = const Color(0xff243642);
+  final FlutterTts flutterTts = FlutterTts();
+  bool isSpeaking = false;
+
 
 
   @override
@@ -121,6 +125,20 @@ class _EpubReaderScreenState extends State<EpubReaderScreen> {
       },
     );
   }
+
+  Future<void> _speak(String text) async {
+    await flutterTts.setLanguage("en-US");
+    await flutterTts.setPitch(1.0);
+    await flutterTts.setSpeechRate(0.5);
+    await flutterTts.speak(text);
+    setState(() => isSpeaking = true);
+  }
+
+  Future<void> _stop() async {
+    await flutterTts.stop();
+    setState(() => isSpeaking = false);
+  }
+
 
   TextSpan _buildTextSpan(String text) {
     final words = text.split(' ');
@@ -278,6 +296,21 @@ class _EpubReaderScreenState extends State<EpubReaderScreen> {
         iconTheme: IconThemeData(color: isDarkMode ? Color(0xffEADFCB) : Color(0xff243642)),
         title: SizedBox(width: 350,child: Text(bookName, style: TextStyle(color: isDarkMode ? Color(0xffEADFCB) : Color(0xff243642),fontSize: 25,fontWeight: FontWeight.w600))),
         actions: [
+          IconButton(
+            icon: Icon(
+              isSpeaking ? Icons.stop : Icons.volume_up,
+              color: isDarkMode ? Color(0xffEADFCB) : Color(0xff243642),
+            ),
+            onPressed: () {
+              if (isSpeaking) {
+                _stop();
+              } else {
+                final chapter = _chapters[_currentChapterIndex];
+                final text = chapter.HtmlContent?.replaceAll(RegExp(r'<[^>]*>'), '') ?? '';
+                _speak(text);
+              }
+            },
+          ),
           IconButton(
             icon: Icon(Icons.settings, color: isDarkMode ? Color(0xffEADFCB) : Color(0xff243642)),
             onPressed: () => _showSettings(context),

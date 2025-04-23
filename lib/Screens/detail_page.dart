@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -91,45 +92,52 @@ class _DetailPageState extends State<DetailPage> {
 
   final List<Map<String, String>> bookDetail = [
     {
-      'img': 'assets/images/book-1.png',
-      'name': 'Crushing & Influence',
-      'auth': 'Dale Carnegie',
+      'img': 'assets/images/the_white_tiger.jpg',
+      'name': 'The White Tiger',
+      'auth': 'Aravind Adiga',
       'url': 'https://pustakam.pythonanywhere.com/book/The_White_Tiger__PDFDrive__k23Yke1.epub',
     },
     {
-      'img': 'assets/images/book-2.png',
-      'name': 'How to Win Friends',
-      'auth': 'Dale Carnegie',
-      'url': 'assets/books/famouspaintings.epub',
+      'img': 'assets/images/call_you_liberly.jpg',
+      'name': 'Call You Liberly',
+      'auth': 'Chantol C. Aspinall',
+      'url': 'assets/book/call-her-liberty-sweet-historical-romance-the-kingdom-series-book-1-obooko.epub',
     },
     {
-      'img': 'assets/images/book-3.png',
-      'name': 'Atomic Habits',
-      'auth': 'James Clear',
-      'url': 'https://pustakam.pythonanywhere.com/book/The_White_Tiger__PDFDrive__k23Yke1.epub',
+      'img': 'assets/images/foursteps_to_forgiveness.jpg',
+      'name': 'Foursteps To Forgiveness',
+      'auth': 'William Fergus Martin',
+      'url': 'assets/book/Four-Steps-to-Forgiveness-William-Fergus-Martin.epub',
     },
   ];
 
+
   Future<void> _downloadAndOpenEpub(String url) async {
     String epubPath;
+
     try {
-      if (url.startsWith('https')) {
+      final directory = await getTemporaryDirectory();
+
+      if (url.startsWith('http') || url.startsWith('https')) {
+        // Handle online EPUB
         final response = await http.get(Uri.parse(url));
         if (response.statusCode == 200) {
-          final directory = await getTemporaryDirectory();
-          epubPath = "${directory.path}/downloaded_book.epub";
+          epubPath = "${directory.path}/downloaded_${DateTime.now().millisecondsSinceEpoch}.epub";
           await File(epubPath).writeAsBytes(response.bodyBytes, flush: true);
+          print("Downloaded EPUB from web to: $epubPath");
         } else {
-          print("Failed to download EPUB file.");
+          print("Failed to download EPUB file from URL: $url");
           return;
         }
       } else {
-        final data = await DefaultAssetBundle.of(context).load(url);
-        final directory = await getTemporaryDirectory();
-        epubPath = "${directory.path}/local_book.epub";
-        await File(epubPath).writeAsBytes(data.buffer.asUint8List(), flush: true);
+        // Handle EPUB from assets
+        final byteData = await rootBundle.load(url);
+        epubPath = "${directory.path}/asset_${DateTime.now().millisecondsSinceEpoch}.epub";
+        await File(epubPath).writeAsBytes(byteData.buffer.asUint8List(), flush: true);
+        print("Loaded EPUB from assets to: $epubPath");
       }
 
+      // Open EPUB reader screen
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -137,7 +145,7 @@ class _DetailPageState extends State<DetailPage> {
         ),
       );
     } catch (e) {
-      print("Error: $e");
+      print("Error opening EPUB: $e");
     }
   }
 
@@ -190,11 +198,11 @@ class _DetailPageState extends State<DetailPage> {
             ),
           ),
           Positioned(
-            top: 150,
+            top: 135,
             left: 90,
             child: Container(
-              height: 220,
-              width: 220,
+              height: 210,
+              width: 210,
               decoration: BoxDecoration(
                 image: DecorationImage(image: AssetImage(book['img']!)),
               ),

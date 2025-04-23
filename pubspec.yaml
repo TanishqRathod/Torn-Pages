@@ -52,6 +52,8 @@ dependencies:
   flutter_widget_from_html: ^0.16.0
   file_picker:
   flutter_launcher_icons:
+  flutter_tts:
+  html_unescape:
 
 flutter_launcher_icons:
     android: true
@@ -94,7 +96,8 @@ flutter:
   assets:
      - assets/images/
      - assets/images/icons/
-     - assets/book/famouspaintings.epub
+     - assets/book/Four-Steps-to-Forgiveness-William-Fergus-Martin.epub
+     - assets/book/call-her-liberty-sweet-historical-romance-the-kingdom-series-book-1-obooko.epub
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

@@ -19,6 +19,7 @@ class _LoginScreenState extends State<LoginScreen> {
   bool password = true;
 
   String? email, passwords;
+  final AuthService _authService = AuthService();
 
   TextEditingController emailController = TextEditingController();
   TextEditingController passwordController = TextEditingController();

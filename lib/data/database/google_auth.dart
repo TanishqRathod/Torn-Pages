@@ -60,6 +60,7 @@ class AuthService {
     };
   }
 
+  // Sign out and clear shared preferences
   Future<void> signOut() async {
     await _googleSignIn.signOut();
     await _auth.signOut();
