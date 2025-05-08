@@ -359,10 +359,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       onTap: ()async{
                         User? user = await AuthService().signInWithGoogle();
                         if (user != null) {
-                          Navigator.pushReplacement(
-                            context,
-                            MaterialPageRoute(builder: (context) => BottomNavbarScreen()),
-                          );
+                          Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => HomePage(index: 0),));
                         }
                       },
                       child: Container(

@@ -15,6 +15,7 @@ import 'package:torn_pages/Screens/profile_screen.dart';
 import 'package:torn_pages/Screens/share_screen.dart';
 import 'package:torn_pages/routes/app_routes.dart';
 
+import '../Screens/google_auth.dart';
 import '../controller/theme_controller.dart';
 
 class BottomNavbarScreen extends StatefulWidget {
@@ -316,35 +317,21 @@ class _BottomNavbarState extends State<BottomNavbarScreen> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          backgroundColor: Theme.of(context).brightness == Brightness.light
-              ? Color(0xff243642)
-              : Colors.white,
-          title: Text("Logout",style: TextStyle(color: Theme.of(context).brightness == Brightness.light
-              ? Color(0xffEADFCB)
-              : Color(0xff243642),fontFamily: 'AlegreyaSans'),),
-          content: Text("Do you want to log out?",style: TextStyle(color: Theme.of(context).brightness == Brightness.light
-              ? Color(0xffEADFCB)
-              : Color(0xff243642),fontFamily: 'AlegreyaSans'),),
+          backgroundColor: const Color(0xffEADFCB),
+          title: const Text("Logout", style: TextStyle(color: Color(0xff243642))),
+          content: const Text("Do you want to logout?", style: TextStyle(color: Color(0xff243642))),
           actions: [
             TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: Text("Cancel",style: TextStyle(color: Theme.of(context).brightness == Brightness.light
-                  ? Color(0xffEADFCB)
-                  : Color(0xff243642),fontFamily: 'AlegreyaSans'),),
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Cancel", style: TextStyle(color: Color(0xff243642))),
             ),
             TextButton(
               onPressed: () async {
                 await FirebaseAuth.instance.signOut();
-                // Clear SharedPreferences
-                SharedPreferences prefs = await SharedPreferences.getInstance();
-                await prefs.clear();
-                Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => LoginScreen(),));
+                await AuthService().signOut();
+                Navigator.pushReplacement(context, MaterialPageRoute(builder: (_) => const LoginScreen()));
               },
-              child: Text("Yes",style: TextStyle(color: Theme.of(context).brightness == Brightness.light
-                  ? Color(0xffEADFCB)
-                  : Color(0xff243642),fontFamily: 'AlegreyaSans'),),
+              child: const Text("Yes", style: TextStyle(color: Color(0xff243642))),
             ),
           ],
         );
