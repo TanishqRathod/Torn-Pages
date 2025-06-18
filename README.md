@@ -1,16 +1,5 @@
 # torn_pages
 
-purpose of building This application is to read freely any book without any cost and make thamself confortable on this platform.
-
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+![Image](https://github.com/user-attachments/assets/c6a30ff4-6724-4102-9431-b7987647415a)
+![Image](https://github.com/user-attachments/assets/51cfcf3c-46a1-4837-82f0-9e433929f298)
+![Image](https://github.com/user-attachments/assets/209d94c7-5648-463e-8db8-54b628efef6a)
